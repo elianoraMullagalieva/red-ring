@@ -1,58 +1,67 @@
-/** Пять живых карточек про разработку сайтов. В кольце каждая повторяется трижды. */
+/**
+ * Пять карточек про разработку сайтов в эстетике дорогих дашбордов:
+ * точечная матрица, тонкие штрихи с подсказкой, концентрические круги, кольцо прогресса, точечные дни.
+ */
 const html = (s: string) => { const t = document.createElement('template'); t.innerHTML = s.trim(); return t.content.firstElementChild as HTMLElement; };
-const head = (label: string, trend = false) => `
-  <div class="head"><span class="label">${label}</span>${trend ? '<span class="trend" aria-hidden><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1 9 9 1M3 1h6v6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>' : ''}</div>`;
+const head = (label: string, tag = '') => `<div class="head"><span class="label">${label}</span>${tag ? `<span class="tag">${tag}</span>` : ''}</div>`;
 
-const stack = ['Figma', 'React', 'GSAP', 'WebGL', 'Tilda'];
-const formats = ['Лендинг', 'Квиз'];
-const steps = ['Бриф и прототип', 'Дизайн в Figma', 'Вёрстка и анимация', 'Запуск и аналитика'];
+/* цифры 5×7 из точек */
+const GLYPH: Record<string, string[]> = {
+  '0': ['01110','10001','10011','10101','11001','10001','01110'], '1': ['00100','01100','00100','00100','00100','00100','01110'],
+  '2': ['01110','10001','00001','00010','00100','01000','11111'], '3': ['11110','00001','00001','01110','00001','00001','11110'],
+  '4': ['00010','00110','01010','10010','11111','00010','00010'], '5': ['11111','10000','11110','00001','00001','10001','01110'],
+  '6': ['00110','01000','10000','11110','10001','10001','01110'], '7': ['11111','00001','00010','00100','01000','01000','01000'],
+  '8': ['01110','10001','10001','01110','10001','10001','01110'], '9': ['01110','10001','10001','01111','00001','00010','01100'],
+};
+const dotDigits = (s: string) => `<span class="dd">${[...s].map((ch) => `<i class="ddg">${GLYPH[ch].map((row) => [...row].map((b) => `<b class="${b === '1' ? 'on' : ''}"></b>`).join('')).join('')}</i>`).join('')}</span>`;
+
+const heights = [3, 5, 4, 7, 6, 9, 5, 8, 10, 7, 11, 9, 12, 10, 13, 11, 14, 12, 15, 13];
+const bars = [38, 52, 44, 60, 48, 70, 56, 66, 74, 62, 80, 68, 86, 72, 90, 78, 94, 84, 100, 88, 96, 90];
 
 export function card(i: number): HTMLElement {
   switch (i) {
-    case 0: return html(`
+    case 0: // заявки: точечная матрица-гистограмма и точечная цифра
+      return html(`
       <div class="inner white">
-        ${head('Стек')}
-        <div class="chips">${stack.map((n, k) => `<span class="chip pop ${k === 0 ? 'chipOn' : ''}" style="animation-delay:${0.3 + k * 0.12}s">${n}</span>`).join('')}</div>
-        <div class="chipsBottom">${formats.map((n, k) => `<span class="chip chipDark pop" style="animation-delay:${1 + k * 0.12}s"><i class="dot"></i>${n}</span>`).join('')}</div>
+        ${head('Заявки', 'неделя')}
+        <div class="matrix" aria-hidden>${heights.map((h, k) => `<i class="col" style="--h:${h};--k:${k}">${Array.from({ length: 15 }, (_, r) => `<b class="${r < h ? 'on' : ''}"></b>`).join('')}</i>`).join('')}</div>
+        <div class="ddRow">${dotDigits('24')}<span class="ddUnit">за 7 дней<br>после запуска</span></div>
       </div>`);
-    case 1: return html(`
+    case 1: // трафик: тонкие штрихи и белая подсказка
+      return html(`
+      <div class="inner red">
+        ${head('Трафик', 'после редизайна')}
+        <div class="spectrum" aria-hidden>
+          ${bars.map((h, k) => `<i style="--h:${h}%;--k:${k}"></i>`).join('')}
+          <span class="tip"><b>+38%</b> визитов</span>
+        </div>
+        <p class="caption light">органика растёт без закупки рекламы</p>
+      </div>`);
+    case 2: // слои: концентрические круги
+      return html(`
       <div class="inner white">
-        ${head('Скорость', true)}
-        <div>
-          <div class="big num">98 <span class="bigMute">из 100</span></div>
-          <div class="segs">${Array.from({ length: 10 }, (_, k) => `<i class="${k < 10 ? 'segOn' : 'segOff'}" style="animation-delay:${k * 0.12}s"></i>`).join('')}</div>
-          <p class="caption">PageSpeed на мобильных</p>
+        ${head('Слои сайта')}
+        <div class="rings" aria-hidden>
+          <i class="rg rg4"><span>Запуск</span></i><i class="rg rg3"><span>Контент</span></i><i class="rg rg2"><span>Код</span></i><i class="rg rg1"><span>Дизайн</span></i>
         </div>
       </div>`);
-    case 2: return html(`
-      <div class="inner red notifWrap">
-        <div class="notif">
-          <span class="appIcon"><b>Э</b></span>
-          <div class="notifBody">
-            <div class="notifHead"><span class="appName">Сайт</span><span>сейчас</span></div>
-            <div class="notifTitle">Новая заявка с сайта</div>
-            <div class="notifText">Марина — нужен лендинг для студии интерьера</div>
-          </div>
-        </div>
-        <p class="notifUnder">Форма отдаёт заявки в Telegram сразу</p>
-      </div>`);
-    case 3: return html(`
+    case 3: // конверсия: кольцо прогресса
+      return html(`
       <div class="inner dark">
-        ${head('Процесс')}
-        <ol class="steps">${steps.map((s, k) => `<li class="pop" style="animation-delay:${0.2 + k * 0.15}s"><i>${k + 1}</i>${s}</li>`).join('')}</ol>
-        <p class="idea"><span>Дизайн и код</span> <span class="ideaMute">в одних руках.</span></p>
+        ${head('Конверсия')}
+        <div class="donut" aria-hidden>
+          <svg viewBox="0 0 120 120" fill="none"><circle class="dTrack" cx="60" cy="60" r="52" stroke-width="6" pathLength="100"/><circle class="dFill" cx="60" cy="60" r="52" stroke-width="6" pathLength="100" stroke-linecap="round"/></svg>
+          <div class="dNum"><b class="num">4,8%</b><span>в заявку</span></div>
+        </div>
+        <p class="idea"><span>Было 1,9%.</span> <span class="ideaMute">Та же реклама, новый сайт.</span></p>
       </div>`);
-    default: return html(`
+    default: // срок: 14 дней точками
+      return html(`
       <div class="inner white">
-        ${head('Срок', true)}
+        ${head('Срок')}
         <div><div class="big num">14 дней</div><p class="caption">от брифа до запуска</p></div>
-        <svg class="area" viewBox="0 0 200 70" fill="none" aria-hidden>
-          <defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff2a2a" stop-opacity=".28"/><stop offset="1" stop-color="#ff2a2a" stop-opacity="0"/></linearGradient></defs>
-          <path d="M2 58 C 30 52, 50 60, 72 44 S 110 40, 132 28 S 170 24, 198 8 V 70 H 2 Z" fill="url(#ag)"/>
-          <path class="areaLine" d="M2 58 C 30 52, 50 60, 72 44 S 110 40, 132 28 S 170 24, 198 8" stroke="#1a1a1c" stroke-width="1.6" stroke-linecap="round"/>
-          <circle class="pulse" cx="198" cy="8" r="9" fill="#ff2a2a" opacity=".35"/>
-          <circle cx="198" cy="8" r="4" fill="#ff2a2a" stroke="#1a1a1c" stroke-width="1.5"/>
-        </svg>
+        <div class="days" aria-hidden>${Array.from({ length: 21 }, (_, k) => `<i class="${k < 14 ? 'on' : ''}" style="--k:${k}"></i>`).join('')}</div>
+        <div class="daysLabels"><span>бриф</span><span>запуск · день 14</span></div>
       </div>`);
   }
 }
