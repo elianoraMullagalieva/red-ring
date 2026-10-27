@@ -36,8 +36,15 @@ a { color: inherit; text-decoration: none; }
 .ring:active { cursor: grabbing; }
 .ring__tilt { transform-style: preserve-3d; }
 .ring__arc { position: relative; transform-style: preserve-3d; }
-.ring__card { position: absolute; inset: 0; will-change: opacity, filter, transform; border-radius: var(--r-card); overflow: hidden;
+.ring__card { position: absolute; inset: 0; will-change: opacity, filter, transform; border-radius: var(--r-card); overflow: hidden; --gx: 50%; --gy: 50%;
   box-shadow: 0 40px 70px -30px rgba(20,0,6,.75), 0 1px 0 rgba(255,255,255,.3) inset; }
+
+/* блик под курсором: мягкое пятно света едет за мышью, тень глубже */
+.ring__card::after { content: ''; position: absolute; inset: 0; z-index: 3; pointer-events: none; opacity: 0; transition: opacity .5s var(--ease);
+  background: radial-gradient(60% 50% at var(--gx) var(--gy), rgba(255,255,255,.34), rgba(255,255,255,0) 70%); mix-blend-mode: soft-light; }
+.ring__card.is-hover::after { opacity: 1; }
+.ring__card.is-hover { box-shadow: 0 60px 90px -36px rgba(20,0,6,.85), 0 1px 0 rgba(255,255,255,.4) inset; }
+.ring__card { transition: box-shadow .6s var(--ease); }
 
 /* ───── карточки ───── */
 .inner { position: absolute; inset: 0; padding: 18px; display: flex; flex-direction: column; justify-content: space-between; }

@@ -25,7 +25,7 @@ export function mountRing(host: HTMLElement, o: RingOptions) {
   host.style.height = `${cardHeight + 40}px`;
   host.style.perspective = `${perspective}px`;
   if (!draggable) host.style.cursor = 'default';
-  const tiltEl = document.createElement('div'); tiltEl.className = 'ring__tilt'; tiltEl.style.transform = `rotateX(${tilt}deg)`;
+  const tiltEl = document.createElement('div'); tiltEl.className = 'ring__tilt'; tiltEl.style.transform = `rotateX(${tilt}deg)`; // далее обновляется в paint
   const arc = document.createElement('div'); arc.className = 'ring__arc'; arc.style.width = `${cardWidth}px`; arc.style.height = `${cardHeight}px`;
   tiltEl.append(arc); host.append(tiltEl);
 
@@ -42,6 +42,10 @@ export function mountRing(host: HTMLElement, o: RingOptions) {
   let snapTarget: number | null = null, holdUntil = 0, dragged = false;
   // звук: еле слышный тик при смене активной карточки, только после первого касания страницы
   let audio: AudioContext | null = null, lastFront = -1;
+  // курсор: кольцо чуть доворачивается за мышью, карточка под ней приподнимается и ловит блик
+  const fine = matchMedia('(hover: hover) and (pointer: fine)').matches;
+  const mouse = { tx: 0, ty: 0, x: 0, y: 0 }; // целевое и текущее смещение, градусы
+  let hoverIdx = -1; const lift: number[] = new Array(count).fill(0);
   const frontIndex = () => { let best = 0, bestTurn = 999; for (let i = 0; i < count; i++) { let f = (rot + i * step) % 360; if (f < 0) f += 360; const t = f > 180 ? 360 - f : f; if (t < bestTurn) { bestTurn = t; best = i; } } return best; };
   const tickSound = () => {
     if (!audio) return;
@@ -51,10 +55,12 @@ export function mountRing(host: HTMLElement, o: RingOptions) {
     o.connect(g).connect(audio.destination); o.start(t); o.stop(t + 0.07);
   };
   const paint = () => {
-    arc.style.transform = `translateZ(${-R}px) rotateY(${rot}deg)`;
+    const view = rot + mouse.x;
+    arc.style.transform = `translateZ(${-R}px) rotateY(${view}deg)`;
+    tiltEl.style.transform = `rotateX(${tilt + mouse.y}deg)`;
     for (let i = 0; i < count; i++) {
       const el = cards[i];
-      let facing = (rot + i * step) % 360; if (facing < 0) facing += 360;
+      let facing = (view + i * step) % 360; if (facing < 0) facing += 360;
       const turn = facing > 180 ? 360 - facing : facing;
       if (turn > 92) { el.style.visibility = 'hidden'; continue; }
       el.style.visibility = 'visible';
@@ -66,7 +72,7 @@ export function mountRing(host: HTMLElement, o: RingOptions) {
       // анимации внутри карточки живут только в резкой зоне и стартуют заново при входе
       const live = soft < 0.02;
       if (live !== el.hasAttribute('data-live')) el.toggleAttribute('data-live', live);
-      el.style.transform = `rotateY(${i * step}deg) translateZ(${R - soft * 50}px)`;
+      el.style.transform = `rotateY(${i * step}deg) translateZ(${R - soft * 50 + lift[i]}px)`;
     }
   };
   paint();
@@ -86,6 +92,8 @@ export function mountRing(host: HTMLElement, o: RingOptions) {
           if (Math.abs(d) < 0.03) { rot = snapTarget; snapTarget = null; holdUntil = now + 2400; }
         } else if (now > holdUntil) rot += speed * (1 + Math.sin(now / 2600) * breath) * dt;
       }
+      mouse.x += (mouse.tx - mouse.x) * Math.min(1, dt * 5); mouse.y += (mouse.ty - mouse.y) * Math.min(1, dt * 5);
+      for (let i = 0; i < count; i++) { const want = i === hoverIdx && !grab.on ? 30 : 0; lift[i] += (want - lift[i]) * Math.min(1, dt * 9); }
       const fi = frontIndex(); if (fi !== lastFront) { if (lastFront >= 0) tickSound(); lastFront = fi; }
       paint();
     }
@@ -99,6 +107,18 @@ export function mountRing(host: HTMLElement, o: RingOptions) {
     if (!audio) { try { audio = new AudioContext(); } catch { audio = null; } } if (audio?.state === 'suspended') audio.resume(); };
   const move = (e: PointerEvent) => { if (!grab.on) return; const d = (e.clientX - grab.x) * 0.2; grab.x = e.clientX; rot += d; vel = d * 60; };
   const up = (e: PointerEvent) => { host.releasePointerCapture?.(e.pointerId); grab.on = false; };
+  const track = (e: PointerEvent) => {
+    if (!fine) return;
+    const r = host.getBoundingClientRect();
+    mouse.tx = ((e.clientX - r.left) / r.width - 0.5) * -12; // ±6°: кольцо тянется к курсору
+    mouse.ty = ((e.clientY - r.top) / r.height - 0.5) * 5;    // лёгкий наклон по вертикали
+    const card = (e.target as HTMLElement).closest('.ring__card') as HTMLElement | null;
+    const idx = card ? cards.indexOf(card) : -1;
+    if (idx !== hoverIdx) { cards[hoverIdx]?.classList.remove('is-hover'); hoverIdx = idx; card?.classList.add('is-hover'); }
+    if (card) { const b = card.getBoundingClientRect(); card.style.setProperty('--gx', `${((e.clientX - b.left) / b.width) * 100}%`); card.style.setProperty('--gy', `${((e.clientY - b.top) / b.height) * 100}%`); }
+  };
+  const leave = () => { mouse.tx = 0; mouse.ty = 0; cards[hoverIdx]?.classList.remove('is-hover'); hoverIdx = -1; };
+  host.addEventListener('pointermove', track); host.addEventListener('pointerleave', leave);
   host.addEventListener('pointerdown', down); host.addEventListener('pointermove', move);
   host.addEventListener('pointerup', up); host.addEventListener('pointercancel', up);
 
