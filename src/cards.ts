@@ -16,7 +16,7 @@ const GLYPH: Record<string, string[]> = {
 const dotDigits = (s: string) => `<span class="dd">${[...s].map((ch) => `<i class="ddg">${GLYPH[ch].map((row) => [...row].map((b) => `<b class="${b === '1' ? 'on' : ''}"></b>`).join('')).join('')}</i>`).join('')}</span>`;
 
 const heights = [3, 5, 4, 7, 6, 9, 5, 8, 10, 7, 11, 9, 12, 10, 13, 11, 14, 12, 15, 13];
-const bars = [38, 52, 44, 60, 48, 70, 56, 66, 74, 62, 80, 68, 86, 72, 90, 78, 94, 84, 100, 88, 96, 90];
+const bars = [30, 42, 36, 50, 44, 58, 52, 66, 60, 72, 68, 80, 76, 88, 84, 96, 92, 100];
 
 export function card(i: number): HTMLElement {
   switch (i) {
@@ -37,13 +37,16 @@ export function card(i: number): HTMLElement {
         </div>
         <p class="caption light">органика растёт без закупки рекламы</p>
       </div>`);
-    case 2: // слои: концентрические круги
+    case 2: // структура: стопка тонких макетов страниц со сдвигом
       return html(`
       <div class="inner white">
-        ${head('Слои сайта')}
-        <div class="rings" aria-hidden>
-          <i class="rg rg4"><span>Запуск</span></i><i class="rg rg3"><span>Контент</span></i><i class="rg rg2"><span>Код</span></i><i class="rg rg1"><span>Дизайн</span></i>
+        ${head('Структура', '3 типа')}
+        <div class="stack" aria-hidden>
+          <i class="page p3"></i>
+          <i class="page p2"></i>
+          <i class="page p1"><b class="pHead"></b><b class="pHero"></b><b class="pCol"></b><b class="pCol"></b><b class="pBtn"></b></i>
         </div>
+        <p class="caption">лендинг · квиз · личный кабинет</p>
       </div>`);
     case 3: // конверсия: кольцо прогресса
       return html(`
@@ -60,7 +63,7 @@ export function card(i: number): HTMLElement {
       <div class="inner white">
         ${head('Срок')}
         <div><div class="big num">14 дней</div><p class="caption">от брифа до запуска</p></div>
-        <div class="days" aria-hidden>${Array.from({ length: 21 }, (_, k) => `<i class="${k < 14 ? 'on' : ''}" style="--k:${k}"></i>`).join('')}</div>
+        <div class="days" aria-hidden>${Array.from({ length: 14 }, (_, k) => `<i style="--k:${k}"></i>`).join('')}<em class="daysLine"></em></div>
         <div class="daysLabels"><span>бриф</span><span>запуск · день 14</span></div>
       </div>`);
   }
